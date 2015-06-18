@@ -43,7 +43,7 @@ dnl Process this file with autoconf to produce a configure script.
 # First [] is used as the prompt
 # Last [] is used for the version information
 AC_INIT(UberFTP (2.8), [2.8], [Jason Alt <jalt@ncsa.illinois.edu>],[uberftp-client])
-AM_INIT_AUTOMAKE 
+AM_INIT_AUTOMAKE
 
 # Check for an MSSFTP build
 AC_ARG_ENABLE(mssftp,
@@ -103,30 +103,34 @@ AC_ARG_WITH(globus,
 	[  globus_location="/usr" ]
 )
 
+AC_ARG_WITH(globus_config,
+	[  --with-globus_config=path   path to directory containing globus_config.h],
+	[  globus_config_location="$withval" ],
+	[  if test "x$globus_location" == "x/usr" ; then
+		# RPM installation
+		globus_config_location=-I$globus_location/lib64/globus/include
+	   else
+		# Source installation
+		globus_config_location=-I$globus_location/include/globus/gcc64dbg
+	   fi]
+)
+
+
 #
 # globus_common.h depends on globus_config.h, so do it first
 #
 
-if test "x$globus_location" == "x/usr" ; then
-	# RPM installation
-	CPPFLAGS=-I$globus_location/lib64/globus/include
-	AC_CHECK_HEADERS([globus_config.h],
-	                 [GLOBUS_CONFIG_CPPFLAGS="$CPPFLAGS"], 
-	                 [AC_MSG_ERROR(globus_config.h not found, install globus-core)])
-else
-	# Source installation
-	CPPFLAGS=-I$globus_location/include/globus/gcc64dbg
-	AC_CHECK_HEADERS([globus_config.h],
-	                 [GLOBUS_CONFIG_CPPFLAGS="$CPPFLAGS"], 
-	                 [AC_MSG_ERROR(globus_config.h not found in $globus_location)])
-fi
+CPPFLAGS=-I$globus_config_location
+AC_CHECK_HEADERS([globus_config.h],
+                 [GLOBUS_CONFIG_CPPFLAGS="$CPPFLAGS"],
+                 [AC_MSG_ERROR([globus_config.h not found, install globus-core])])
 
 #
 # Now check for globus_common.h using globus_config.h's location
 #
 CPPFLAGS="-I/$globus_location/include/globus $GLOBUS_CONFIG_CPPFLAGS"
-AC_CHECK_HEADERS([globus_common.h], 
-                 [GLOBUS_COMMON_CPPFLAGS="-I/$globus_location/include/globus"], 
+AC_CHECK_HEADERS([globus_common.h],
+                 [GLOBUS_COMMON_CPPFLAGS="-I/$globus_location/include/globus"],
                  [AC_MSG_ERROR(globus_common.h not found)])
 
 CPPFLAGS="$GLOBUS_CONFIG_CPPFLAGS $GLOBUS_COMMON_CPPFLAGS"
@@ -136,13 +140,13 @@ CPPFLAGS="$GLOBUS_CONFIG_CPPFLAGS $GLOBUS_COMMON_CPPFLAGS"
 #
 LDFLAGS="-L$globus_location/lib64/"
 AC_CHECK_LIB([globus_common],
-             [globus_module_activate], 
-             [], 
+             [globus_module_activate],
+             [],
              [AC_MSG_ERROR(libglobus_common.so not found)])
 
-AC_CHECK_LIB([globus_gssapi_gsi], 
-             [gss_wrap], 
-             [], 
+AC_CHECK_LIB([globus_gssapi_gsi],
+             [gss_wrap],
+             [],
              [AC_MSG_ERROR(libglobus_gssapi_gsi.so not found)])
 
 AC_CONFIG_HEADERS([config.h])
